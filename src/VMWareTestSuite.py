@@ -3,8 +3,8 @@ import array
 
 from pyVmomi import vim
 
-from tests.helpers.Proxy import Proxy
-from tests.helpers.Configuration import Configuration
+from Proxy import Proxy
+from Configuration import Configuration
 
 class VMWareTestSuite(unittest.TestCase):
     @classmethod
