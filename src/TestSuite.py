@@ -17,10 +17,11 @@ class TestSuite(unittest.TestCase):
     def test_suite(self):
         steps = ['create', 'start', 'stop', 'destroy']
         for i, name in enumerate(steps):
-            print(name)
             try:
+                print("\nStep {0} Start".format(name))
                 step = getattr(self, 'step_' + name)
                 step()
+                print("Step {0} End".format(name))
 
             except Exception as e:
                 self.fail("{0} failed ({1}: {2})".format(step, type(e), e))
@@ -31,7 +32,7 @@ class TestSuite(unittest.TestCase):
 
         self.assertTrue(vm_template != None)
 
-        print("Found Template > {0}".format(vm_template.name))
+        print("Found Virtual Machine Template > {0}".format(vm_template.name))
 
         vm_name = self.config.vcenter_test_virtual_machine
 
@@ -83,7 +84,7 @@ class TestSuite(unittest.TestCase):
 
         self.assertTrue(vm != None)
 
-        print("Found VM > {0}".format(vm.name))
+        print("Found Virtual Machine > {0}".format(vm.name))
 
         print("VM Power State > {0}".format(vm.runtime.powerState))
 
@@ -103,7 +104,7 @@ class TestSuite(unittest.TestCase):
 
         self.assertTrue(vm != None)
 
-        print("Found VM > {0}".format(vm.name))
+        print("Found Virtual Machine > {0}".format(vm.name))
 
         print("VM Power State > {0}".format(vm.runtime.powerState))
 
