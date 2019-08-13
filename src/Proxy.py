@@ -1,3 +1,5 @@
+import ssl
+
 from pyVmomi import vim, vmodl
 from pyVim.connect import SmartConnect, Disconnect
 
@@ -24,7 +26,14 @@ class Proxy():
         print("vcenter_test_resource_pool: {0}".format(config.vcenter_test_resource_pool))
 
         try:
-            self.service_instance = SmartConnect(host=config.vcenter_host, port=config.vcenter_port, user=config.vcenter_username, pwd=config.vcenter_password)
+            self.service_instance = SmartConnect(
+                host=config.vcenter_host,
+                port=config.vcenter_port,
+                user=config.vcenter_username,
+                pwd=config.vcenter_password
+                sslContext=ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+            )
+
             self.connected = True
 
         except IOError as error:
