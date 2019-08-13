@@ -59,7 +59,7 @@ class Proxy():
 
         return fetched
 
-    def download(url, cookies, destination):
+    def download(self, url, cookies, destination):
         headers = {'Accept': 'application/x-vnd.vmware-streamVmdk'}
         with open(destination, 'wb') as handle:
             response = requests.get(url, stream=True, headers=headers, cookies=cookies, verify=False)
@@ -79,7 +79,7 @@ class Proxy():
 
         return byte_count
 
-    def createOvfDescriptor(name, files):
+    def createOvfDescriptor(self, name, files):
         ovf_parameters = vim.OvfManager.CreateDescriptorParams()
         ovf_parameters.name = name
         ovf_parameters.ovfFiles = files
