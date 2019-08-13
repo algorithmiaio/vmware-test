@@ -31,7 +31,7 @@ class Proxy():
                 host=config.vcenter_host,
                 port=config.vcenter_port,
                 user=config.vcenter_username,
-                pwd=config.vcenter_password
+                pwd=config.vcenter_password,
                 sslContext=ssl.SSLContext(ssl.PROTOCOL_TLSv1)
             )
 
