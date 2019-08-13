@@ -6,7 +6,7 @@ from pyVmomi import vim
 from Proxy import Proxy
 from Configuration import Configuration
 
-class VMWareTestSuite(unittest.TestCase):
+class TestSuite(unittest.TestCase):
     @classmethod
     def setUpClass(target):
         target.config = Configuration()
