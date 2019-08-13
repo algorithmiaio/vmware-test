@@ -135,6 +135,28 @@ class TestSuite(unittest.TestCase):
 
         self.assertTrue(task_power_off.info.state == Proxy.State.success)
 
+    def step_create_template(self):
+        vm = self.proxy.fetch([vim.VirtualMachine], self.config.vcenter_test_virtual_machine)
+
+        self.assertTrue(vm != None)
+
+        print("Found Virtual Machine > {0}".format(vm.name))
+
+        vm_template_name = self.config.vcenter_test_virtual_machine + '-template'
+
+        vm_resource_pool = self.proxy.fetch([vim.ResourcePool], self.config.vcenter_test_resource_pool)
+
+        vm_relocate_spec = vim.vm.RelocateSpec(pool=vm_resource_pool)
+
+        vm_clone_space = vim.vm.CloneSpec(powerOn=False, template=True, location=vm_relocate_spec, customization=None)
+
+        print("Launch Clone Task for {0}".format(vm_template_name))
+        task_clone = vm.Clone(name=vm_template_name, folder=vm.parent, spec=vm_clone_space)
+        self.proxy.wait([task_clone])
+        print("Task Complete > state={0}".format(task_clone.info.state))
+
+        self.assertTrue(task_clone.info.state == Proxy.State.success, "Task to clone VM failed.")
+
 
     def step_destroy(self):
 
