@@ -36,22 +36,12 @@ class TestSuite(unittest.TestCase):
 
         vm_name = self.config.vcenter_test_virtual_machine
 
-        vm_memory = 1024
-        vm_config_spec = vim.vm.ConfigSpec(numCPUs=1, memoryMB=vm_memory)
-
-        vm_adapter_mapping = vim.vm.customization.AdapterMapping()
-        vm_adapter_mapping.adapter = vim.vm.customization.IPSettings(ip=vim.vm.customization.DhcpIpGenerator(), dnsDomain=self.config.vcenter_test_domain)
-
-        vm_global_ip = vim.vm.customization.GlobalIPSettings()
-        vm_identity = vim.vm.customization.LinuxPrep(domain=self.config.vcenter_test_domain, hostName=vim.vm.customization.FixedName(name=vm_name))
-
-        vm_custom_spec = vim.vm.customization.Specification(nicSettingMap=[vm_adapter_mapping], globalIPSettings=vm_global_ip, identity=vm_identity)
+        vm_config_spec = vim.vm.ConfigSpec(numCPUs=1, memoryMB=1024)
 
         vm_resource_pool = self.proxy.fetch([vim.ResourcePool], self.config.vcenter_test_resource_pool)
 
         vm_relocate_spec = vim.vm.RelocateSpec(pool=vm_resource_pool)
 
-        # vm_clone_space = vim.vm.CloneSpec(powerOn=True, template=False, location=vm_relocate_spec, customization=vm_custom_spec, config=vm_config_spec)
         vm_clone_space = vim.vm.CloneSpec(powerOn=False, template=False, location=vm_relocate_spec, customization=None, config=vm_config_spec)
 
         print("Launch Clone Task for {0}".format(vm_name))
