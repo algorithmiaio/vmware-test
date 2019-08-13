@@ -51,6 +51,54 @@ class TestSuite(unittest.TestCase):
 
         self.assertTrue(task_clone.info.state == Proxy.State.success)
 
+    def step_attach_disk(self):
+        vm = self.proxy.fetch([vim.VirtualMachine], self.config.vcenter_test_virtual_machine)
+
+        self.assertTrue(vm != None)
+
+        print("Found Virtual Machine > {0}".format(vm.name))
+
+        print("VM Power State > {0}".format(vm.runtime.powerState))
+
+        vm_config_spec = vim.vm.ConfigSpec()
+
+        vm_controller = None
+        vm_device_unit_number = 0
+        for vm_device in vm.config.hardware.device:
+            if hasattr(vm_device.backing, 'fileName'):
+                vm_device_unit_number = int(vm_device.unitNumber) + 1
+                if vm_device_unit_number == 7:
+                    vm_device_unit_number += 1
+
+            if isinstance(vm_device, vim.vm.device.VirtualSCSIController):
+                vm_controller = vm_device
+
+        self.assertTrue(vm_device_unit_number < 16)
+
+        vm_disk_spec = vim.vm.device.VirtualDeviceSpec()
+
+        vm_disk_spec.fileOperation = "create"
+        vm_disk_spec.operation = vim.vm.device.VirtualDeviceSpec.Operation.add
+        vm_disk_spec.device = vim.vm.device.VirtualDisk()
+        vm_disk_spec.device.backing = vim.vm.device.VirtualDisk.FlatVer2BackingInfo()
+        vm_disk_spec.device.backing.thinProvisioned = True
+
+        vm_disk_spec.device.backing.diskMode = 'persistent'
+        vm_disk_spec.device.unitNumber = vm_device_unit_number
+        vm_disk_spec.device.capacityInKB = int(10) * 1024 * 1024
+        vm_disk_spec.device.controllerKey = vm_controller.key
+
+        vm_config_spec.deviceChange = [vm_disk_spec]
+
+        # self.assertTrue(format(vm.runtime.powerState) != "poweredOn")
+
+        print("Launch Reconfigure VM Task on {0}".format(vm.name))
+        task_reconfigure_vm = vm.ReconfigVM_Task(spec=vm_config_spec)
+        self.proxy.wait([task_reconfigure_vm])
+        print("Task Complete > state={0}".format(task_reconfigure_vm.info.state))
+
+        self.assertTrue(task_reconfigure_vm.info.state == Proxy.State.success)
+
     def step_power_on(self):
         vm = self.proxy.fetch([vim.VirtualMachine], self.config.vcenter_test_virtual_machine)
 
