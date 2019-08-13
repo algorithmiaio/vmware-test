@@ -1,7 +1,9 @@
 import unittest
 import array
 import time
+import re
 
+from urlparse import urlparse, urlunparse
 from pyVmomi import vim
 
 from Proxy import Proxy
@@ -16,16 +18,16 @@ class TestSuite(unittest.TestCase):
         target.proxy.connect(target.config)
 
     def test_suite(self):
-        steps = ['create', 'start', 'stop', 'destroy']
+        steps = ['create', 'attach_disk', 'power_on', 'power_off', 'create_template', 'export_template', 'destroy']
         for i, name in enumerate(steps):
             try:
-                print("\nStep {0} Start".format(name))
+                print("\nStep [{0}] Start".format(name))
                 step = getattr(self, 'step_' + name)
                 step()
-                print("Step {0} End".format(name))
+                print("Step [{0}] End".format(name))
 
             except Exception as e:
-                self.fail("{0} failed ({1}: {2})".format(step, type(e), e))
+                self.fail("Step [{0}] Failed ({1} >> {2})".format(name, type(e), e))
 
 
     def step_create(self):
@@ -158,56 +160,37 @@ class TestSuite(unittest.TestCase):
 
         self.assertTrue(task_clone.info.state == Proxy.State.success, "Task to clone VM failed.")
 
-    def step_download_template(self):
-        vm = self.proxy.fetch([vim.VirtualMachine], self.config.vcenter_test_virtual_machine)
+    def step_export_template(self):
+        vm_template_name = self.config.vcenter_test_virtual_machine + '-template'
 
-        self.assertTrue(vm != None)
+        vm_template = self.proxy.fetch([vim.VirtualMachine], vm_template_name)
 
-        print("Found Virtual Machine > {0}".format(vm.name))
+        self.assertTrue(vm_template != None)
 
-        print("VM Power State > {0}".format(vm.runtime.powerState))
+        print("Found Virtual Machine > {0}".format(vm_template.name))
 
-        self.assertTrue(format(vm.runtime.powerState) == "poweredOff")
+        print("VM Power State > {0}".format(vm_template.runtime.powerState))
 
-        vm_ovf_files = []
-        vm_http_lease = vm.ExportVm()
+        self.assertTrue(format(vm_template.runtime.powerState) == "poweredOff")
 
-        try:
+        for file in vm_template.layoutEx.file:
+            print("Download {0}".format(file.name))
 
-            while vm_http_lease.state == vim.HttpNfcLease.State.initializing:
-                print "HTTP NFC Lease Initializing."
-                time.sleep(2)
+            file_parsed = re.match("^\[([^ ]*)\] ?(.*)$", file.name)
+            file_parsed_groups = file_parsed.groups()
 
-            if vm_http_lease.state != vim.HttpNfcLease.State.ready:
-                print "HTTP NFC Lease error: {0}".format(vm_http_lease.state.error)
+            print(file_parsed_groups)
 
-            for deviceUrl in vm_http_lease.info.deviceUrl:
-                if not deviceUrl.targetId:
-                    print("No targetId found for url: {0}.".format(deviceUrl.url))
-                    continue
+            file_datastore = file_parsed_groups[0]
+            file_name = file_parsed_groups[1]
+            file_destination = "./export/{0}".format(file_name)
 
-                export_path = "./export/" + deviceUrl.targetId
+            resource = "/folder/{0}".format(file_name)
 
-                print 'Downloading {0} to {1}'.format(deviceUrl.url, export_path)
+            params = {"dsName": file_datastore, "dcPath": self.config.vcenter_test_datacenter}
+            url = "https://{0}:{1}/{2}".format(self.config.vcenter_host, self.config.vcenter_port, resource)
 
-                size = self.proxy.download(deviceUrl.url, export_path)
-
-                print 'Creating OVF file for {0}'.format(export_path)
-
-                vm_ovf_file = vim.OvfManager.OvfFile()
-                vm_ovf_file.deviceId = deviceUrl.key
-                vm_ovf_file.path = deviceUrl.targetId
-                vm_ovf_file.size = size
-
-                vm_ovf_files.append(vm_ovf_file)
-
-            vm_descriptor = self.proxy(vm.name, vm_ovf_files)
-
-            if vm_descriptor_result.error:
-                raise vm_descriptor_result.error[0].fault
-
-        finally:
-            vm_http_lease.HttpNfcLeaseComplete()
+            self.proxy.download(url, params, file_destination)
 
 
     def step_destroy(self):

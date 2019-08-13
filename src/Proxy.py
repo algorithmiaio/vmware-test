@@ -60,25 +60,33 @@ class Proxy():
 
         return fetched
 
-    def download(self, url, cookies, destination):
-        headers = {'Accept': 'application/x-vnd.vmware-streamVmdk'}
-        with open(destination, 'wb') as handle:
-            response = requests.get(url, stream=True, headers=headers, cookies=cookies, verify=False)
+    def download(self, url, params, destination):
+        # Set headers
+        headers = {'Content-Type': 'application/octet-stream'}
 
-            if not response.ok:
-                response.raise_for_status()
+        # Create cookie
+        cookie_parts = (self.service_instance._stub.cookie).split('=')
 
-            byte_count = 0
+        cookie_name = cookie_parts[0]
+        cookie_split = cookie_parts[1].split(';')
 
-            for block in response.iter_content(chunk_size=2048):
-                if block:
-                    handle.write(block)
-                    handle.flush()
-                    os.fsync(handle.fileno())
+        cookie_value = cookie_split[0]
 
-                byte_count += len(block)
+        cookie_path_split = cookie_split[1].split(";")
+        cookie_path = cookie_path_split[0].lstrip()
 
-        return byte_count
+        cookies = {cookie_name: " {0}; ${1}".format(cookie_value, cookie_path)}
+
+        # Fetch file contents
+        result = requests.get(url, params=params, headers=headers,cookies=cookies, allow_redirects=True)
+
+        # Create any missing parent directories
+        if not os.path.exists(os.path.dirname(destination)):
+            os.makedirs(os.path.dirname(destination))
+
+        # Write to file
+        open(destination, 'wb').write(result.content)
+
 
     def createOvfDescriptor(self, target, files):
         ovf_parameters = vim.OvfManager.CreateDescriptorParams()

@@ -10,5 +10,6 @@ class Configuration():
         self.vcenter_test_prefix = os.getenv('VCENTER_TEST_PREFIX', '')
         self.vcenter_test_template = self.vcenter_test_prefix + os.getenv('VCENTER_TEST_TEMPLATE', 'default')
         self.vcenter_test_domain = self.vcenter_test_prefix + os.getenv('VCENTER_TEST_DOMAIN', 'vmware-testing.local')
+        self.vcenter_test_datacenter = self.vcenter_test_prefix + os.getenv('VCENTER_TEST_DATACENTER', 'vmware-testing-datacenter')
         self.vcenter_test_resource_pool = self.vcenter_test_prefix + os.getenv('VCENTER_TEST_RESOURCE_POOL', 'vmware-testing-resource-pool')
         self.vcenter_test_virtual_machine = self.vcenter_test_prefix + os.getenv('VCENTER_TEST_VIRTUAL_MACHINE', 'vmware-testing-virtual-machine')
