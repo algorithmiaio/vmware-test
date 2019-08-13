@@ -1,4 +1,5 @@
 import ssl
+import requests
 
 from pyVmomi import vim, vmodl
 from pyVim.connect import SmartConnect, Disconnect
@@ -59,6 +60,26 @@ class Proxy():
                 break
 
         return fetched
+
+    def download(url, cookies, destination):
+        headers = {'Accept': 'application/x-vnd.vmware-streamVmdk'}
+        with open(destination, 'wb') as handle:
+            response = requests.get(url, stream=True, headers=headers, cookies=cookies, verify=False)
+
+            if not response.ok:
+                response.raise_for_status()
+
+            byte_count = 0
+
+            for block in response.iter_content(chunk_size=2048):
+                if block:
+                    handle.write(block)
+                    handle.flush()
+                    os.fsync(handle.fileno())
+
+                byte_count += len(block)
+
+        return byte_count
 
     def wait(self, tasks):
         collector = self.service_instance.content.propertyCollector
