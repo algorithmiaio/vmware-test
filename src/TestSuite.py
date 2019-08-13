@@ -1,5 +1,6 @@
 import unittest
 import array
+import time
 
 from pyVmomi import vim
 
@@ -156,6 +157,57 @@ class TestSuite(unittest.TestCase):
         print("Task Complete > state={0}".format(task_clone.info.state))
 
         self.assertTrue(task_clone.info.state == Proxy.State.success, "Task to clone VM failed.")
+
+    def step_download_template(self):
+        vm = self.proxy.fetch([vim.VirtualMachine], self.config.vcenter_test_virtual_machine)
+
+        self.assertTrue(vm != None)
+
+        print("Found Virtual Machine > {0}".format(vm.name))
+
+        print("VM Power State > {0}".format(vm.runtime.powerState))
+
+        self.assertTrue(format(vm.runtime.powerState) == "poweredOff")
+
+        vm_ovf_files = []
+        vm_http_lease = vm.ExportVm()
+
+        try:
+
+            while vm_http_lease.state == vim.HttpNfcLease.State.initializing:
+                print "HTTP NFC Lease Initializing."
+                time.sleep(2)
+
+            if vm_http_lease.state != vim.HttpNfcLease.State.ready:
+                print "HTTP NFC Lease error: {0}".format(vm_http_lease.state.error)
+
+            for deviceUrl in vm_http_lease.info.deviceUrl:
+                if not deviceUrl.targetId:
+                    print("No targetId found for url: {0}.".format(deviceUrl.url))
+                    continue
+
+                export_path = "./export/" + deviceUrl.targetId
+
+                print 'Downloading {0} to {1}'.format(deviceUrl.url, export_path)
+
+                size = self.proxy.download(deviceUrl.url, export_path)
+
+                print 'Creating OVF file for {0}'.format(export_path)
+
+                vm_ovf_file = vim.OvfManager.OvfFile()
+                vm_ovf_file.deviceId = deviceUrl.key
+                vm_ovf_file.path = deviceUrl.targetId
+                vm_ovf_file.size = size
+
+                vm_ovf_files.append(vm_ovf_file)
+
+            vm_descriptor = self.proxy(vm.name, vm_ovf_files)
+
+            if vm_descriptor_result.error:
+                raise vm_descriptor_result.error[0].fault
+
+        finally:
+            vm_http_lease.HttpNfcLeaseComplete()
 
 
     def step_destroy(self):
