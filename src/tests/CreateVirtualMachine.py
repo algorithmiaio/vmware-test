@@ -1,4 +1,5 @@
 import unittest
+import array
 
 from pyVmomi import vim
 
@@ -15,7 +16,11 @@ class CreateVirtualMachine(unittest.TestCase):
 
         vm_template = proxy.fetch([vim.VirtualMachine], config.vcenter_test_template)
 
-        vm_name = config.vcenter_test_prefix + '-' + 'create-virtual-machine'
+        self.assertTrue(vm_template != None)
+
+        print("Found Template > {0}".format(vm_template.name))
+
+        vm_name = config.vcenter_test_virtual_machine
 
         vm_memory = 1024
         vm_config_spec = vim.vm.ConfigSpec(numCPUs=1, memoryMB=vm_memory)
@@ -32,11 +37,16 @@ class CreateVirtualMachine(unittest.TestCase):
 
         vm_relocate_spec = vim.vm.RelocateSpec(pool=vm_resource_pool)
 
-        vm_clone_space = vim.vm.CloneSpec(powerOn=True, template=False, location=vm_relocate_spec, customization=vm_custom_spec, config=vm_config_spec)
+        # vm_clone_space = vim.vm.CloneSpec(powerOn=True, template=False, location=vm_relocate_spec, customization=vm_custom_spec, config=vm_config_spec)
+        vm_clone_space = vim.vm.CloneSpec(powerOn=False, template=False, location=vm_relocate_spec, customization=None, config=vm_config_spec)
 
-        vm = vm_template.Clone(name=vm_name, folder=vm_template.parent, spec=vm_clone_space)
+        print("Launch Clone Task for {0}".format(vm_name))
+        task_clone = vm_template.Clone(name=vm_name, folder=vm_template.parent, spec=vm_clone_space)
+        proxy.wait([task_clone])
+        print("Task Complete > state={0}".format(task_clone.info.state))
 
-        self.assertEqual(sum([1, 2, 3]), 6, "Should be 6")
+        self.assertTrue(task_clone.info.state == Proxy.State.success)
+
 
 
 
