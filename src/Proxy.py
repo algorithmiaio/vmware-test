@@ -81,6 +81,13 @@ class Proxy():
 
         return byte_count
 
+    def createOvfDescriptor(name, files):
+        ovf_parameters = vim.OvfManager.CreateDescriptorParams()
+        ovf_parameters.name = name
+        ovf_parameters.ovfFiles = files
+
+        return self.service_instance.content.ovfManager.CreateDescriptor(obj=vm, cdp=ovf_parameters)
+
     def wait(self, tasks):
         collector = self.service_instance.content.propertyCollector
         queue = [str(task) for task in tasks]
