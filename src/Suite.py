@@ -18,7 +18,7 @@ class Suite(unittest.TestCase):
         target.proxy.connect(target.config)
 
     def test_suite(self):
-        steps = ['create', 'attach_disk', 'power_on', 'power_off', 'create_template', 'export_template', 'destroy']
+        steps = ['create', 'attach_disk', 'power_on', 'power_off', 'create_template', 'export_template', 'destroy_template', 'destroy']
         for i, name in enumerate(steps):
             try:
                 print("\nStep [{0}] Start".format(name))
@@ -192,6 +192,26 @@ class Suite(unittest.TestCase):
 
             self.proxy.download(url, params, file_destination)
 
+    def step_destroy_template(self):
+        vm_template_name = self.config.vcenter_test_virtual_machine + '-template'
+
+        vm_template = self.proxy.fetch([vim.VirtualMachine], vm_template_name)
+
+        self.assertTrue(vm_template != None)
+
+        print("Found Virtual Machine Template > {0}".format(vm_template.name))
+
+        print("VM Power State > {0}".format(vm_template.runtime.powerState))
+
+        self.assertTrue(format(vm_template.runtime.powerState) == "poweredOff")
+
+        print("Launch Destroy Task on {0}".format(vm_template.name))
+        task_destroy = vm_template.Destroy_Task()
+        self.proxy.wait([task_destroy])
+        print("Task Complete > state={0}".format(task_destroy.info.state))
+
+        self.assertTrue(task_destroy.info.state == Proxy.State.success)
+
 
     def step_destroy(self):
 
@@ -211,5 +231,4 @@ class Suite(unittest.TestCase):
         print("Task Complete > state={0}".format(task_destroy.info.state))
 
         self.assertTrue(task_destroy.info.state == Proxy.State.success)
-
 
