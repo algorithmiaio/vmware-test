@@ -1,5 +1,5 @@
 import unittest
-from src.TestSuite import TestSuite
+from src.Suite import Suite
 
 if __name__ == '__main__':
     unittest.main()
