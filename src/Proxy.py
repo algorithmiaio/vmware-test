@@ -1,4 +1,5 @@
 import requests
+import os
 
 from pyVmomi import vim, vmodl
 from pyVim.connect import SmartConnect, Disconnect
