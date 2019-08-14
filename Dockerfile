@@ -1,4 +1,11 @@
 FROM python:2
 
-RUN pip install --upgrade pyvmomi
+COPY . /app
+WORKDIR /app
 
+RUN pip install --upgrade pyvmomi
+RUN pip install --upgrade pipenv
+
+RUN pipenv install --system --deploy
+
+CMD ["python", "main.py"]
